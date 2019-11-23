@@ -114,13 +114,25 @@ class Pax(Parser):
     def boolean_constant(self, p):
         return ('constant', p[0])
 
-    @_('number_expression number_operator number_expression')
+    @_('number_add_expression')
     def number_expression(self, p):
-        return (p.number_operator, [p.number_expression0, p.number_expression1])
+        return p.number_add_expression
+
+    @_('number_multiply_expression')
+    def number_add_expression(self, p):
+        return [p.number_multiply_expression]
+
+    @_('number_add_expression number_add_operator number_multiply_expression')
+    def number_add_expression(self, p):
+        return (p.number_add_operator, [p.number_add_expression, p.number_multiply_expression])
 
     @_('number_term')
-    def number_expression(self, p):
+    def number_multiply_expression(self, p):
         return [p.number_term]
+
+    @_('number_multiply_expression number_multiply_operator number_term')
+    def number_multiply_expression(self, p):
+        return (p.number_multiply_operator, [p.number_multiply_expression, p.number_term])
 
     @_('LB number_expression RB')
     def number_term(self, p):
@@ -145,11 +157,14 @@ class Pax(Parser):
 
     @_('PLUS')
     @_('MINUS')
+    def number_add_operator(self, p):
+        return p[0]
+
     @_('TIMES')
     @_('INTDIVIDE')
     @_('DIVIDE')
     @_('MOD')
-    def number_operator(self, p):
+    def number_multiply_operator(self, p):
         return p[0]
 
     @_('')
@@ -165,7 +180,7 @@ class Pax(Parser):
 
 
 TEXT = """
-a && b || c and TrUe AND False Xor True
+1 * (2 + 3) % 4
 """
 
 def tokens():

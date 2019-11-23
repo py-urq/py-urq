@@ -3,15 +3,18 @@ expression = boolean expression | number expression | empty;
 boolean expression = boolean or expression;
 boolean or expression = boolean and expression , [{ boolean or operator , boolean and expression }] ;
 boolean or operator = "||" | "^^" | "or" | "xor" ;
-boolean and expression = boolean term , [{ boolean and operator }]
+boolean and expression = boolean term , [{ boolean and operator, boolean term }]
 boolean and operator = "&&" | "and" ;
 boolean term = variable | boolean constant | not , boolean term | "(" , boolean expression , ")";
 variable = letter , { letter | digit | "_" } ;
 boolean constant = "true" | "false" ;
 not = "not" ;
 
-number expression = number term [{ number operator, number term}] ;
-number operator = "+" | "-" | "*" | "/" | "//" | "%" ;
+number expression = number add expression
+number add expression = number multiply expression [{ number add operator, number multiply expression}] ;
+number add operator = "+" | "-";
+number multiply expression = number term , [{ number multiply operator , number term }];
+number multiply operator = "*" | "/" | "//" | "%" ;
 number term = variable | number constant | minus , number term | plus , number term
              | "(" , number expression , ")" ;
 number constant = (digit , { digit } | [{digit}], "." , [{digit}] , [ ("e" | "E") , [plus | minus] , digit, { digit } ])
