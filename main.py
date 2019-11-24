@@ -27,9 +27,11 @@ class Lex(Lexer):
         GE,
         LT,
         GT,
+        MASK_EQ,
         EQ,
         NUMBER,
         ID,
+        STRING,
     }
 
     ignore = ' \t'
@@ -54,9 +56,11 @@ class Lex(Lexer):
     GE = r'>='
     LT = r'<'
     GT = r'>'
+    MASK_EQ = r'=='
     EQ = r'='
     NUMBER = r'\b[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\b'
     ID = r'[a-zA-Z][a-zA-Z0-9_]*'
+    STRING = r'"[^"]*"'
 
 
 class Pax(Parser):
@@ -124,6 +128,10 @@ class Pax(Parser):
     @_('boolean_compare_expression')
     def boolean_term(self, p):
         return p.boolean_compare_expression
+
+    @_('string_compare_expression')
+    def boolean_term(self, p):
+        return p.string_compare_expression
 
     @_('ID')
     def boolean_term(self, p):
@@ -209,6 +217,24 @@ class Pax(Parser):
     def number_multiply_operator(self, p):
         return p[0]
 
+    @_('string_term string_compare_operator string_term')
+    def string_compare_expression(self, p):
+        return (p.string_compare_operator, [p.string_term0, p.string_term1])
+
+    @_('NE')
+    @_('EQ')
+    @_('MASK_EQ')
+    def string_compare_operator(self, p):
+        return p[0]
+
+    @_('STRING')
+    def string_term(self, p):
+        return p.STRING
+
+    @_('ID')
+    def string_term(self, p):
+        return ('string-variable', p.ID)
+
     @_('')
     def empty(self, p):
         pass
@@ -222,7 +248,7 @@ class Pax(Parser):
 
 
 TEXT = """
-1 < 2 != True
+"abc def ghu" == "abc*" and blabla
 """
 
 def tokens():

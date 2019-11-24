@@ -6,7 +6,7 @@ boolean or operator = "||" | "^^" | "or" | "xor" ;
 boolean and expression = boolean term , [{ boolean and operator, boolean term }]
 boolean and operator = "&&" | "and" ;
 boolean term = variable | boolean constant | not , boolean term | "(" , boolean expression , ")"
-              | number compare expression | boolean compare expression;
+              | number compare expression | boolean compare expression | string compare expression;
 variable = letter , { letter | digit | "_" } ;
 boolean constant = "true" | "false" ;
 not = "not" ;
@@ -28,5 +28,11 @@ number constant = (digit , { digit } | [{digit}], "." , [{digit}] , [ ("e" | "E"
                 | ( plus | minus ) , number constant ;
 minus = "-" ;
 plus = "+" ;
+
+string compare expression = string term , string compare operator , string term ;
+string compare operator = "=" | "==" | "!=" | "<>" ;
+
+string term = variable | string constant ;
+string constant = "\"" , { letter | digit | symbol (?) } , "\"" ;
 
 empty = "" ;
