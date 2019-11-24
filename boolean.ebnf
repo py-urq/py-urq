@@ -6,10 +6,13 @@ boolean or operator = "||" | "^^" | "or" | "xor" ;
 boolean and expression = boolean term , [{ boolean and operator, boolean term }]
 boolean and operator = "&&" | "and" ;
 boolean term = variable | boolean constant | not , boolean term | "(" , boolean expression , ")"
-              | number compare expression ;
+              | number compare expression | boolean compare expression;
 variable = letter , { letter | digit | "_" } ;
 boolean constant = "true" | "false" ;
 not = "not" ;
+
+boolean compare expression = boolean term , boolean compare operator , boolean term;
+boolean compare operator = "=" | "!=" | "<>";
 
 number compare expression = number term , number compare operator , number term ;
 number compare operator = "<" | ">" | "<=" | ">=" | "!=" | "<>" | "=" ;

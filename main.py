@@ -121,6 +121,10 @@ class Pax(Parser):
     def boolean_term(self, p):
         return p.number_compare_expression
 
+    @_('boolean_compare_expression')
+    def boolean_term(self, p):
+        return p.boolean_compare_expression
+
     @_('ID')
     def boolean_term(self, p):
         return ('boolean-variable', p.ID)
@@ -129,6 +133,15 @@ class Pax(Parser):
     @_('FALSE')
     def boolean_constant(self, p):
         return ('constant', p[0])
+
+    @_('boolean_term boolean_compare_operator boolean_term')
+    def boolean_compare_expression(self, p):
+        return (p.boolean_compare_operator, [p.boolean_term0, p.boolean_term1])
+
+    @_('NE')
+    @_('EQ')
+    def boolean_compare_operator(self, p):
+        return p[0]
 
     @_('number_term number_compare_operator number_term')
     def number_compare_expression(self, p):
@@ -209,7 +222,7 @@ class Pax(Parser):
 
 
 TEXT = """
-1 < 2 and True
+1 < 2 != True
 """
 
 def tokens():
