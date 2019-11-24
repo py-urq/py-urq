@@ -14,7 +14,7 @@ not = "not" ;
 boolean compare expression = boolean term , boolean compare operator , boolean term;
 boolean compare operator = "=" | "!=" | "<>";
 
-number compare expression = number term , number compare operator , number term ;
+number compare expression = number expression , number compare operator , number expression ;
 number compare operator = "<" | ">" | "<=" | ">=" | "!=" | "<>" | "=" ;
 
 number expression = number add expression

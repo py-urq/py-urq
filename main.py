@@ -151,9 +151,9 @@ class Pax(Parser):
     def boolean_compare_operator(self, p):
         return p[0]
 
-    @_('number_term number_compare_operator number_term')
+    @_('number_expression number_compare_operator number_expression')
     def number_compare_expression(self, p):
-        return (p.number_compare_operator, [p.number_term0, p.number_term1])
+        return (p.number_compare_operator, [p.number_expression0, p.number_expression1])
 
     @_('NE')
     @_('LE')
@@ -248,7 +248,7 @@ class Pax(Parser):
 
 
 TEXT = """
-"abc def ghu" == "abc*" and blabla
+1 + 2 <= 3
 """
 
 def tokens():
