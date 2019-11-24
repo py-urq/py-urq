@@ -22,6 +22,12 @@ class Lex(Lexer):
         NOT,
         TRUE,
         FALSE,
+        NE,
+        LE,
+        GE,
+        LT,
+        GT,
+        EQ,
         NUMBER,
         ID,
     }
@@ -43,6 +49,12 @@ class Lex(Lexer):
     NOT = r'(?i)\bnot\b'
     TRUE = r'(?i)\btrue\b'
     FALSE = r'(?i)\bfalse\b'
+    NE = r'!=|<>'
+    LE = r'<='
+    GE = r'>='
+    LT = r'<'
+    GT = r'>'
+    EQ = r'='
     NUMBER = r'\b[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\b'
     ID = r'[a-zA-Z][a-zA-Z0-9_]*'
 
@@ -105,6 +117,10 @@ class Pax(Parser):
     def boolean_term(self, p):
         return p.boolean_constant
 
+    @_('number_compare_expression')
+    def boolean_term(self, p):
+        return p.number_compare_expression
+
     @_('ID')
     def boolean_term(self, p):
         return ('boolean-variable', p.ID)
@@ -113,6 +129,19 @@ class Pax(Parser):
     @_('FALSE')
     def boolean_constant(self, p):
         return ('constant', p[0])
+
+    @_('number_term number_compare_operator number_term')
+    def number_compare_expression(self, p):
+        return (p.number_compare_operator, [p.number_term0, p.number_term1])
+
+    @_('NE')
+    @_('LE')
+    @_('GE')
+    @_('LT')
+    @_('GT')
+    @_('EQ')
+    def number_compare_operator(self, p):
+        return p[0]
 
     @_('number_add_expression')
     def number_expression(self, p):
@@ -180,7 +209,7 @@ class Pax(Parser):
 
 
 TEXT = """
-1 * (2 + 3) % 4
+1 < 2 and True
 """
 
 def tokens():

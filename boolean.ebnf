@@ -5,10 +5,14 @@ boolean or expression = boolean and expression , [{ boolean or operator , boolea
 boolean or operator = "||" | "^^" | "or" | "xor" ;
 boolean and expression = boolean term , [{ boolean and operator, boolean term }]
 boolean and operator = "&&" | "and" ;
-boolean term = variable | boolean constant | not , boolean term | "(" , boolean expression , ")";
+boolean term = variable | boolean constant | not , boolean term | "(" , boolean expression , ")"
+              | number compare expression ;
 variable = letter , { letter | digit | "_" } ;
 boolean constant = "true" | "false" ;
 not = "not" ;
+
+number compare expression = number term , number compare operator , number term ;
+number compare operator = "<" | ">" | "<=" | ">=" | "!=" | "<>" | "=" ;
 
 number expression = number add expression
 number add expression = number multiply expression [{ number add operator, number multiply expression}] ;
