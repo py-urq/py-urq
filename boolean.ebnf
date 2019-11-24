@@ -1,4 +1,8 @@
-expression = boolean expression | number expression | empty;
+program = { statement }
+
+statement = variable , "=" , (expression | string term)
+
+expression = boolean expression | number expression ;
 
 boolean expression = boolean or expression;
 boolean or expression = boolean and expression , [{ boolean or operator , boolean and expression }] ;

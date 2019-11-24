@@ -76,8 +76,23 @@ class Pax(Parser):
     )
 
     @_('empty')
-    def expression(self, p):
-        return []
+    def program(self, p):
+        pass
+
+    @_('statement')
+    def program(self, p):
+        return [p.statement]
+
+    @_('program statement')
+    def program(self, p):
+        prog = list(p.program)
+        prog.append(p.statement)
+        return prog
+
+    @_('ID EQ expression')
+    @_('ID EQ string_term')
+    def statement(self, p):
+        return ('assign', p.ID, p[2])
 
     @_('boolean_expression')
     @_('number_expression')
@@ -248,7 +263,7 @@ class Pax(Parser):
 
 
 TEXT = """
-1 + 2 <= 3
+a = 1 + 2 <= 3
 """
 
 def tokens():
