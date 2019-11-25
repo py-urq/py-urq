@@ -10,6 +10,8 @@ class Lex(Lexer):
     tokens = {
         LB,
         RB,
+        LINK_LB,
+        LINK_RB,
         PLUS,
         MINUS,
         TIMES,
@@ -33,6 +35,9 @@ class Lex(Lexer):
         IF,
         THEN,
         ELSE,
+        PRINT,
+        PRINTLN,
+        LINK_SEP,
         NUMBER,
         ID,
         STRING,
@@ -43,6 +48,8 @@ class Lex(Lexer):
 
     LB = r'\('
     RB = r'\)'
+    LINK_LB = r'\[\['
+    LINK_RB = r'\]\]'
     PLUS = r'\+'
     MINUS = r'-'
     TIMES = r'\*'
@@ -66,6 +73,9 @@ class Lex(Lexer):
     IF = r'(?i)\bif\b'
     THEN = r'(?i)\bthen\b'
     ELSE = r'(?i)\belse\b'
+    PRINT = r'(?i)(\bprint|\bp)[^&\n]+'
+    PRINTLN = r'(?i)(\bprintln\b|\bpln\b)[^&\n]+'
+    LINK_SEP = r'\|'
     NUMBER = r'\b[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\b'
     ID = r'[a-zA-Z][a-zA-Z0-9_]*'
     STRING = r'"[^"]*"'
@@ -109,8 +119,14 @@ class Pax(Parser):
 
     @_('assignment_statement')
     @_('conditional_statement')
+    @_('print_statement')
     def statement(self, p):
         return p[0]
+
+    @_('PRINT')
+    @_('PRINTLN')
+    def print_statement(self, p):
+        return ('print', p[0])
 
     @_('ID EQ boolean_expression')
     @_('ID EQ number_expression')
@@ -290,13 +306,7 @@ class Pax(Parser):
 
 
 TEXT = """
-A = 1 & b = 2
-if a == b 
-  then a = b & a = d 
-  else a = e 
-    & if a = b 
-      then a = c & e = 23 
-      else sa = 42
+pln
 """
 
 def tokens():

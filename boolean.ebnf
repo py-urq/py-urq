@@ -1,7 +1,21 @@
 program = { statement group }
 
 statement group = statement , { "&" , statement } ;
-statement = assignment statement | conditional statement ;
+statement = assignment statement
+          | conditional statement
+          | print statement;
+
+print statement = ( print | p | println | pln ) , text block
+
+text block = {( text | link )}
+
+link = "[[" , location name , "]]"
+     | "[[" , text , "|" , location name , "]]"
+     | "[[" , text , "|" , statement group , "]]" ;
+
+text = { letter | digit | symbol (?) - "&" - "\n" }
+
+location name = { letter | digit | symbol }
 
 assignment statement = variable , "=" , (boolean expression | number expression | string term) ;
 conditional statement = "if" , boolean expression , "then" , statement group [ "else" , statement group ] ;
