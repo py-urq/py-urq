@@ -1,8 +1,10 @@
-program = { statement }
+program = { statement group }
 
-statement = variable , "=" , (expression | string term)
+statement group = statement , { "&" , statement } ;
+statement = assignment statement | conditional statement ;
 
-expression = boolean expression | number expression ;
+assignment statement = variable , "=" , (boolean expression | number expression | string term) ;
+conditional statement = "if" , boolean expression , "then" , statement group [ "else" , statement group ] ;
 
 boolean expression = boolean or expression;
 boolean or expression = boolean and expression , [{ boolean or operator , boolean and expression }] ;

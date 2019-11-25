@@ -29,6 +29,10 @@ class Lex(Lexer):
         GT,
         MASK_EQ,
         EQ,
+        ST_CONT,
+        IF,
+        THEN,
+        ELSE,
         NUMBER,
         ID,
         STRING,
@@ -58,6 +62,10 @@ class Lex(Lexer):
     GT = r'>'
     MASK_EQ = r'=='
     EQ = r'='
+    ST_CONT = r'&'
+    IF = r'(?i)\bif\b'
+    THEN = r'(?i)\bthen\b'
+    ELSE = r'(?i)\belse\b'
     NUMBER = r'\b[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\b'
     ID = r'[a-zA-Z][a-zA-Z0-9_]*'
     STRING = r'"[^"]*"'
@@ -79,25 +87,44 @@ class Pax(Parser):
     def program(self, p):
         pass
 
-    @_('statement')
+    @_('statement_group')
     def program(self, p):
-        return [p.statement]
+        return [p.statement_group]
 
-    @_('program statement')
+    @_('program statement_group')
     def program(self, p):
         prog = list(p.program)
-        prog.append(p.statement)
+        prog.append(p.statement_group)
         return prog
 
-    @_('ID EQ expression')
-    @_('ID EQ string_term')
+    @_('statement')
+    def statement_group(self, p):
+        return [p.statement]
+
+    @_('statement_group ST_CONT statement')
+    def statement_group(self, p):
+        stg = list(p.statement_group)
+        stg.append(p.statement)
+        return stg
+
+    @_('assignment_statement')
+    @_('conditional_statement')
     def statement(self, p):
+        return p[0]
+
+    @_('ID EQ boolean_expression')
+    @_('ID EQ number_expression')
+    @_('ID EQ string_term')
+    def assignment_statement(self, p):
         return ('assign', p.ID, p[2])
 
-    @_('boolean_expression')
-    @_('number_expression')
-    def expression(self, p):
-        return p[0]
+    @_('IF boolean_expression THEN statement_group')
+    def conditional_statement(self, p):
+        return ('if', p.boolean_expression, p.statement_group, None)
+
+    @_('IF boolean_expression THEN statement_group ELSE statement_group')
+    def conditional_statement(self, p):
+        return ('if', p.boolean_expression, p.statement_group0, p.statement_group1)
 
     @_('boolean_or_expression')
     def boolean_expression(self, p):
@@ -263,7 +290,13 @@ class Pax(Parser):
 
 
 TEXT = """
-a = 1 + 2 <= 3
+A = 1 & b = 2
+if a == b 
+  then a = b & a = d 
+  else a = e 
+    & if a = b 
+      then a = c & e = 23 
+      else sa = 42
 """
 
 def tokens():
