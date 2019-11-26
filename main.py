@@ -37,9 +37,11 @@ class Lex(Lexer):
         ELSE,
         PRINT,
         PRINTLN,
+        GOTO,
         LINK_SEP,
         NUMBER,
         ID,
+        # LOCATION,
         STRING,
     }
 
@@ -73,11 +75,13 @@ class Lex(Lexer):
     IF = r'(?i)\bif\b'
     THEN = r'(?i)\bthen\b'
     ELSE = r'(?i)\belse\b'
-    PRINT = r'(?i)(\bprint|\bp)[^&\n]+'
-    PRINTLN = r'(?i)(\bprintln\b|\bpln\b)[^&\n]+'
+    PRINT = r'(?i)(\bprint|\bp)([^&\n]*?\[\[.*?\]\][^&\n]*?)*[^&\n]+'
+    PRINTLN = r'(?i)(\bprintln\b|\bpln\b)([^&\n]*?\[\[.*?\]\][^&\n]*?)*[^&\n]+'
+    GOTO = r'(?i)\bgoto\b'
     LINK_SEP = r'\|'
     NUMBER = r'\b[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\b'
-    ID = r'[a-zA-Z][a-zA-Z0-9_]*'
+    ID = r'\b[a-zA-Z][a-zA-Z0-9_]*\b'
+    #LOCATION = r'\b[a-zA-Z][a-zA-Z0-9_-]+\b'
     STRING = r'"[^"]*"'
 
 
@@ -92,6 +96,14 @@ class Pax(Parser):
         ('left', OR, XOR),
         ('left', AND),
     )
+
+    static_self = None
+
+    @staticmethod
+    def get_static_self():
+        if not Pax.static_self:
+            Pax.static_self = Pax()
+        return Pax.static_self
 
     @_('empty')
     def program(self, p):
@@ -120,13 +132,18 @@ class Pax(Parser):
     @_('assignment_statement')
     @_('conditional_statement')
     @_('print_statement')
+    @_('goto_statement')
     def statement(self, p):
         return p[0]
 
     @_('PRINT')
     @_('PRINTLN')
     def print_statement(self, p):
-        return ('print', p[0])
+        return ('print', self._parse_text_block(p[0][3:]))
+
+    @_('GOTO ID')
+    def goto_statement(self, p):
+        return ('goto', p.ID)
 
     @_('ID EQ boolean_expression')
     @_('ID EQ number_expression')
@@ -305,8 +322,71 @@ class Pax(Parser):
             print('Syntax error at EOF')
 
 
+    def _parse_text_block(self, text_block):
+        rex = r'(?P<link>\[\[.+?\]\])|(?P<substitution>#.*?\$)'
+        res = re.search(rex, text_block)
+        begin = 0
+        end = len(text_block)
+
+        res = []
+
+        for match in re.finditer(rex, text_block):
+            group = match.lastgroup
+            span_begin, span_end = match.span(group)
+
+            text = text_block[begin:span_begin]
+            if text:
+                res.append(('text', text))
+            if group == 'link':
+                res.append(self._parse_link(match.group(group)))
+            elif group == 'substitution':
+                res.append(self._parse_substitution(match.group(group)))
+
+            begin = span_end
+
+        text = text_block[begin:end]
+        if text:
+            res.append(('text', text))
+
+        return res
+
+    def _parse_substitution(self, substitution_text: str):
+        substitution_text = substitution_text[1:-1]
+        if substitution_text.startswith('%'):
+            substitution_text = substitution_text[1:]
+        if substitution_text.startswith('#'):
+            code = substitution_text[1:]
+            try:
+                return ('text', chr(int(code)))
+            except Exception:
+                raise Exception(f'Cannot parse {code} as char code')
+        elif substitution_text == '':
+            return ('text', ' ')
+        elif substitution_text == '/':
+            return ('text', '\n')
+        else:
+            return ('variable', substitution_text)
+
+    def _parse_link(self, link_text: str):
+        link_text = link_text[2:-2]
+        splits = link_text.split('|')
+        if len(splits) == 1:
+            link_text = link_text.strip(' ')
+            return ('link', link_text, [('goto', link_text)])
+        elif len(splits) == 2:
+            link_text = splits[0].strip(' ')
+            operators = splits[1].strip(' ')
+            if re.match(r'^[a-zA-Z-0-9_]+$', operators):
+                return ('link', link_text, [('goto', operators)])
+            else:
+                return ('link', link_text, self._parse_operators(operators))
+
+    def _parse_operators(self, operators_text):
+        res = Pax().parse(Lex().tokenize(operators_text))
+        return res
+
 TEXT = """
-pln
+pln some text  #var_name$ and a special char ##38$ and a [[b]] and [[ link | if a = z then goto a else a = z & goto b ]] of cause... & pln abc
 """
 
 def tokens():

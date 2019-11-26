@@ -3,7 +3,11 @@ program = { statement group }
 statement group = statement , { "&" , statement } ;
 statement = assignment statement
           | conditional statement
-          | print statement;
+          | print statement
+          | goto statement
+          ;
+
+goto statement = "goto" , variable
 
 print statement = ( print | p | println | pln ) , text block
 
