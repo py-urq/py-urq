@@ -6,6 +6,8 @@ statement = assignment statement
           | print statement
           | goto statement
           | end statement
+          | input statement
+          | any key statement
           ;
 
 goto statement = "goto" , variable
@@ -28,6 +30,11 @@ button statement = "btn" , location name
                  | "btn" , location name , "," , text
                  | "btn" , statement group , "," , text
                  ;
+
+input statement = "input", variable ;
+any key statement = "anykey"
+                  | "anykey" , variable
+                  ;
 
 assignment statement = variable , "=" , (boolean expression | number expression | string term) ;
 conditional statement = "if" , boolean expression , "then" , statement group [ "else" , statement group ] ;

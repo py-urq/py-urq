@@ -40,6 +40,8 @@ class Lex(Lexer):
         BUTTON,
         GOTO,
         END,
+        INPUT,
+        ANYKEY,
         LINK_SEP,
         NUMBER,
         ID,
@@ -83,6 +85,8 @@ class Lex(Lexer):
     BUTTON = r'(?i)\bbtn\b[^\n]+'
     GOTO = r'(?i)\bgoto\b'
     END = r'(?i)\bend\b'
+    INPUT = r'(?i)\binput\b'
+    ANYKEY = r'(?i)\banykey\b'
     LINK_SEP = r'\|'
     NUMBER = r'\b[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\b'
     ID = r'\b[a-zA-Z][a-zA-Z0-9_]*\b'
@@ -140,6 +144,8 @@ class Pax(Parser):
     @_('goto_statement')
     @_('button_statement')
     @_('end_statement')
+    @_('input_statement')
+    @_('any_key_statement')
     def statement(self, p):
         return p[0]
 
@@ -155,6 +161,18 @@ class Pax(Parser):
     @_('END')
     def end_statement(self, p):
         return ('end', )
+
+    @_('INPUT ID')
+    def input_statement(self, p):
+        return ('input', p.ID)
+
+    @_('ANYKEY')
+    def any_key_statement(self, p):
+        return ('anykey', None)
+
+    @_('ANYKEY ID')
+    def any_key_statement(self, p):
+        return ('anykey', p.ID)
 
     @_('BUTTON')
     def button_statement(self, p):
@@ -424,6 +442,8 @@ pln some text  #var_name$ and a special char ##38$ and a [[b]] and [[ link | if 
 */
 btn pln Hi Hi hi & goto a, and here is text
 end
+input a
+anykey & anykey b
 """
 
 def tokens():
