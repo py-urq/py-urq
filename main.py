@@ -37,6 +37,7 @@ class Lex(Lexer):
         ELSE,
         PRINT,
         PRINTLN,
+        BUTTON,
         GOTO,
         LINK_SEP,
         NUMBER,
@@ -47,6 +48,7 @@ class Lex(Lexer):
 
     ignore = ' \t'
     ignore_newline = r'\n+'
+    ignore_comment = r'(?s)/\*.*?\*/'
 
     LB = r'\('
     RB = r'\)'
@@ -77,6 +79,7 @@ class Lex(Lexer):
     ELSE = r'(?i)\belse\b'
     PRINT = r'(?i)(\bprint|\bp)([^&\n]*?\[\[.*?\]\][^&\n]*?)*[^&\n]+'
     PRINTLN = r'(?i)(\bprintln\b|\bpln\b)([^&\n]*?\[\[.*?\]\][^&\n]*?)*[^&\n]+'
+    BUTTON = r'(?i)\bbtn\b[^\n]+'
     GOTO = r'(?i)\bgoto\b'
     LINK_SEP = r'\|'
     NUMBER = r'\b[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\b'
@@ -133,6 +136,7 @@ class Pax(Parser):
     @_('conditional_statement')
     @_('print_statement')
     @_('goto_statement')
+    @_('button_statement')
     def statement(self, p):
         return p[0]
 
@@ -144,6 +148,10 @@ class Pax(Parser):
     @_('GOTO ID')
     def goto_statement(self, p):
         return ('goto', p.ID)
+
+    @_('BUTTON')
+    def button_statement(self, p):
+        return self._parse_button(p.BUTTON[3:])
 
     @_('ID EQ boolean_expression')
     @_('ID EQ number_expression')
@@ -380,13 +388,34 @@ class Pax(Parser):
                 return ('link', link_text, [('goto', operators)])
             else:
                 return ('link', link_text, self._parse_operators(operators))
+        else:
+            raise Exception('Incorrect character | somewhere')
 
     def _parse_operators(self, operators_text):
         res = Pax().parse(Lex().tokenize(operators_text))
         return res
 
+    def _parse_button(self, button_text: str):
+        split = button_text.split(',', 2)
+        if len(split) == 1:
+            location_name = split[0].strip(' ')
+            return ('button', location_name, [('goto', location_name)])
+        else:
+            text = split[1].strip(' ')
+            operators = split[0].strip(' ')
+            if re.match(r'^[a-zA-Z-0-9_]+$', operators):
+                return ('button', text, [('goto', operators)])
+            else:
+                return ('button', text, self._parse_operators(operators))
+
+
+
+
 TEXT = """
+/*
 pln some text  #var_name$ and a special char ##38$ and a [[b]] and [[ link | if a = z then goto a else a = z & goto b ]] of cause... & pln abc
+*/
+btn pln Hi Hi hi & goto a, and here is text
 """
 
 def tokens():

@@ -21,6 +21,11 @@ text = { letter | digit | symbol (?) - "&" - "\n" }
 
 location name = { letter | digit | symbol }
 
+button statement = "btn" , location name
+                 | "btn" , location name , "," , text
+                 | "btn" , statement group , "," , text
+                 ;
+
 assignment statement = variable , "=" , (boolean expression | number expression | string term) ;
 conditional statement = "if" , boolean expression , "then" , statement group [ "else" , statement group ] ;
 
