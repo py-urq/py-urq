@@ -5,9 +5,12 @@ statement = assignment statement
           | conditional statement
           | print statement
           | goto statement
+          | end statement
           ;
 
 goto statement = "goto" , variable
+
+end statement = "end" ;
 
 print statement = ( print | p | println | pln ) , text block
 

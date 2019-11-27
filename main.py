@@ -39,6 +39,7 @@ class Lex(Lexer):
         PRINTLN,
         BUTTON,
         GOTO,
+        END,
         LINK_SEP,
         NUMBER,
         ID,
@@ -81,6 +82,7 @@ class Lex(Lexer):
     PRINTLN = r'(?i)(\bprintln\b|\bpln\b)([^&\n]*?\[\[.*?\]\][^&\n]*?)*[^&\n]+'
     BUTTON = r'(?i)\bbtn\b[^\n]+'
     GOTO = r'(?i)\bgoto\b'
+    END = r'(?i)\bend\b'
     LINK_SEP = r'\|'
     NUMBER = r'\b[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\b'
     ID = r'\b[a-zA-Z][a-zA-Z0-9_]*\b'
@@ -137,6 +139,7 @@ class Pax(Parser):
     @_('print_statement')
     @_('goto_statement')
     @_('button_statement')
+    @_('end_statement')
     def statement(self, p):
         return p[0]
 
@@ -148,6 +151,10 @@ class Pax(Parser):
     @_('GOTO ID')
     def goto_statement(self, p):
         return ('goto', p.ID)
+
+    @_('END')
+    def end_statement(self, p):
+        return ('end', )
 
     @_('BUTTON')
     def button_statement(self, p):
@@ -416,6 +423,7 @@ TEXT = """
 pln some text  #var_name$ and a special char ##38$ and a [[b]] and [[ link | if a = z then goto a else a = z & goto b ]] of cause... & pln abc
 */
 btn pln Hi Hi hi & goto a, and here is text
+end
 """
 
 def tokens():
@@ -425,4 +433,6 @@ def tokens():
 
 res = Pax().parse(tokens())
 print()
-pprint(res, indent=4, width=1)
+
+for statement in res:
+    pprint(statement, indent=4, width=1)
