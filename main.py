@@ -48,6 +48,9 @@ class Lex(Lexer):
         INVKILL,
         QUIT,
         SAVE,
+        RANDOM,
+        RANDOM_INT,
+        TIME,
         LINK_SEP,
         NUMBER,
         ID,
@@ -103,6 +106,9 @@ class Lex(Lexer):
     INVKILL = r'(?i)\binvkill\b'
     QUIT = r'(?i)\bquit\b'
     SAVE = r'(?i)\bsave\b'
+    RANDOM = r'(?i)\brnd\b'
+    RANDOM_INT = r'(?i)\brnd\d+\b'
+    TIME = r'(?i)\btime\b'
     LINK_SEP = r'\|'
     NUMBER = r'\b[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\b'
     ID = r'\b[a-zA-Z][a-zA-Z0-9_]*\b'
@@ -358,6 +364,16 @@ class Pax(Parser):
     def number_term(self, p):
         return ('number-variable', p.ID)
 
+    @_('number_function')
+    def number_term(self, p):
+        return p.number_function
+
+    @_('RANDOM')
+    @_('RANDOM_INT')
+    @_('TIME')
+    def number_function(self, p):
+        return ('function', p[0])
+
     @_('PLUS number_term')
     @_('MINUS number_term')
     def number_term(self, p):
@@ -504,6 +520,7 @@ inv+ 1 + 2, das
 invkill a
 invkill
 save & quit
+a = time * rnd23
 """
 
 def tokens():

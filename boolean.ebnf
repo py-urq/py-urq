@@ -81,9 +81,12 @@ number add operator = "+" | "-";
 number multiply expression = number term , [{ number multiply operator , number term }];
 number multiply operator = "*" | "/" | "//" | "%" ;
 number term = variable | number constant | minus , number term | plus , number term
-             | "(" , number expression , ")" ;
+             | "(" , number expression , ")" | number function ;
 number constant = (digit , { digit } | [{digit}], "." , [{digit}] , [ ("e" | "E") , [plus | minus] , digit, { digit } ])
                 | ( plus | minus ) , number constant ;
+number function = "rnd", { digit }
+                | time
+                ;
 minus = "-" ;
 plus = "+" ;
 
