@@ -14,6 +14,8 @@ statement = assignment statement
           | clear inventory statement
           | quit statement
           | save statement
+          | pause statement
+          | multimedia statement
           ;
 
 goto statement = "goto" , variable
@@ -54,6 +56,18 @@ save statement = "save" ;
 
 procedure statement = "proc", location name;
 forget procedure statement = "forget_proc";
+
+pause statement = "pause" , number expression;
+multimedia statement = play file
+                     | music file
+                     | image file
+                     ;
+
+play statement = "play", file;
+music statement = "music", file;
+image statement = "image", file;
+
+file = string term;
 
 assignment statement = variable , "=" , (boolean expression | number expression | string term) ;
 conditional statement = "if" , boolean expression , "then" , statement group [ "else" , statement group ] ;

@@ -51,6 +51,10 @@ class Lex(Lexer):
         RANDOM,
         RANDOM_INT,
         TIME,
+        PAUSE,
+        PLAY,
+        MUSIC,
+        IMAGE,
         LINK_SEP,
         NUMBER,
         ID,
@@ -109,6 +113,10 @@ class Lex(Lexer):
     RANDOM = r'(?i)\brnd\b'
     RANDOM_INT = r'(?i)\brnd\d+\b'
     TIME = r'(?i)\btime\b'
+    PAUSE = r'(?i)\bpause\b'
+    PLAY = r'(?i)\bplay\b'
+    MUSIC = r'(?i)\bmusic\b'
+    IMAGE = r'(?i)\bimage\b'
     LINK_SEP = r'\|'
     NUMBER = r'\b[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\b'
     ID = r'\b[a-zA-Z][a-zA-Z0-9_]*\b'
@@ -174,6 +182,8 @@ class Pax(Parser):
     @_('clear_inventory_statement')
     @_('quit_statement')
     @_('save_statement')
+    @_('pause_statement')
+    @_('multimedia_statement')
     def statement(self, p):
         return p[0]
 
@@ -237,6 +247,16 @@ class Pax(Parser):
     @_('SAVE')
     def save_statement(self, p):
         return ('save', )
+
+    @_('PAUSE number_expression')
+    def pause_statement(self, p):
+        return ('pause', p.number_expression)
+
+    @_('PLAY string_term')
+    @_('MUSIC string_term')
+    @_('IMAGE string_term')
+    def multimedia_statement(self, p):
+        return (p[0], p.string_term)
 
     @_('ID EQ boolean_expression')
     @_('ID EQ number_expression')
@@ -521,6 +541,10 @@ invkill a
 invkill
 save & quit
 a = time * rnd23
+pause a + 23
+play "aaa"
+music "bbb"
+image "ddd"
 """
 
 def tokens():
