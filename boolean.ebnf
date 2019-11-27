@@ -18,7 +18,10 @@ statement = assignment statement
           | multimedia statement
           ;
 
-goto statement = "goto" , variable
+label statement = ":", location name;
+location name = letter, {letter | digit | symbol - "&" - "\n" - "," }
+
+goto statement = "goto" , location name
 
 end statement = "end" ;
 

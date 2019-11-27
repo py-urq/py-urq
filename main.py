@@ -2,6 +2,7 @@ from sly import Lexer, Parser
 from dataclasses import dataclass, field
 from typing import List
 from pprint import pprint
+from pathlib import Path
 
 import re
 
@@ -59,12 +60,27 @@ class Lex(Lexer):
         NUMBER,
         ID,
         # LOCATION,
+        LABEL,
         STRING,
     }
 
     ignore = ' \t'
-    ignore_newline = r'\n+'
-    ignore_comment = r'(?s)/\*.*?\*/'
+    # ignore_newline = r'\n+'
+    #ignore_comment = r'(?s)/\*.*?\*/'
+    # ignore_old_comment = r'\;.*?\n'
+
+    # Define a rule so we can track line numbers
+    @_(r'\n+')
+    def ignore_newline(self, t):
+        self.lineno += len(t.value)
+
+    @_(r'(?s)/\*.*?\*/')
+    def ignore_comment(self, t):
+        self.lineno += t.value.count('\n')
+
+    @_(r'\;.*?\n')
+    def ignore_old_comment(self, t):
+        self.lineno += 1
 
     literals = {
         ',',
@@ -100,11 +116,11 @@ class Lex(Lexer):
     PRINT = r'(?i)(\bprint\b|\bp\b)([^&\n]*?\[\[.*?\]\][^&\n]*?)*[^&\n]+'
     PRINTLN = r'(?i)(\bprintln\b|\bpln\b)([^&\n]*?\[\[.*?\]\][^&\n]*?)*[^&\n]+'
     BUTTON = r'(?i)\bbtn\b[^\n]+'
-    GOTO = r'(?i)\bgoto\b'
+    GOTO = r'(?i)\bgoto\b' + r'[^&\n]+'
     END = r'(?i)\bend\b'
     INPUT = r'(?i)\binput\b'
     ANYKEY = r'(?i)\banykey\b'
-    PROC = r'(?i)\bproc\b'
+    PROC = r'(?i)\bproc\b' + r'[^&\n]+'
     FORGET_PROC = r'(?i)\bforget_proc\b'
     INV = r'(?i)\binv[+-]'
     INVKILL = r'(?i)\binvkill\b'
@@ -119,8 +135,9 @@ class Lex(Lexer):
     IMAGE = r'(?i)\bimage\b'
     LINK_SEP = r'\|'
     NUMBER = r'\b[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\b'
-    ID = r'\b[a-zA-Z][a-zA-Z0-9_]*\b'
+    ID = r'\b\w+\b'
     #LOCATION = r'\b[a-zA-Z][a-zA-Z0-9_-]+\b'
+    LABEL = r':[^&\n,]+'
     STRING = r'"[^"]*"'
 
 
@@ -170,6 +187,7 @@ class Pax(Parser):
 
     @_('assignment_statement')
     @_('conditional_statement')
+    @_('label_statement')
     @_('print_statement')
     @_('goto_statement')
     @_('button_statement')
@@ -187,14 +205,20 @@ class Pax(Parser):
     def statement(self, p):
         return p[0]
 
+    @_('LABEL')
+    def label_statement(self, p):
+        label = p.LABEL[1:].strip(' ')
+        return ('label', label)
+
     @_('PRINT')
     @_('PRINTLN')
     def print_statement(self, p):
         return ('print', self._parse_text_block(p[0][3:]))
 
-    @_('GOTO ID')
+    @_('GOTO')
     def goto_statement(self, p):
-        return ('goto', p.ID)
+        location_name = p.GOTO[5:]
+        return ('goto', location_name)
 
     @_('END')
     def end_statement(self, p):
@@ -212,9 +236,10 @@ class Pax(Parser):
     def any_key_statement(self, p):
         return ('anykey', p.ID)
 
-    @_('PROC ID')
+    @_('PROC')
     def procedure_statement(self, p):
-        return ('call', p.ID)
+        location_name = p.PROC[5:]
+        return ('call', location_name)
 
     @_('FORGET_PROC')
     def forget_procedure_statement(self, p):
@@ -439,11 +464,19 @@ class Pax(Parser):
 
     def error(self, p):
         if p:
-            print(f'Error at token {p.type}, {p.value} at line {p.lineno} col {p.index}')
+            line = p.lineno
+            column = self._find_column(quest_file, p)
+            print(f'Error at token {p.type}, {p.value} at line {line} col {column}')
             self.errok()
         else:
             print('Syntax error at EOF')
 
+    def _find_column(self, text, token):
+        last_cr = text.rfind('\n', 0, token.index)
+        if last_cr < 0:
+            last_cr = 0
+        column = (token.index - last_cr) + 1
+        return column
 
     def _parse_text_block(self, text_block):
         rex = r'(?P<link>\[\[.+?\]\])|(?P<substitution>#.*?\$)'
@@ -547,8 +580,12 @@ music "bbb"
 image "ddd"
 """
 
+quest_file = Path(
+    "/home/su0/git/kirillsulim/sly-test/quests/Alice's Adventures in Urqland/quest.qst"
+).read_text('utf-8')
+
 def tokens():
-    for t in Lex().tokenize(TEXT):
+    for t in Lex().tokenize(quest_file):
         print(t)
         yield t
 
