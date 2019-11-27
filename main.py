@@ -44,6 +44,8 @@ class Lex(Lexer):
         ANYKEY,
         PROC,
         FORGET_PROC,
+        INV,
+        INVKILL,
         LINK_SEP,
         NUMBER,
         ID,
@@ -54,6 +56,10 @@ class Lex(Lexer):
     ignore = ' \t'
     ignore_newline = r'\n+'
     ignore_comment = r'(?s)/\*.*?\*/'
+
+    literals = {
+        ',',
+    }
 
     LB = r'\('
     RB = r'\)'
@@ -91,6 +97,8 @@ class Lex(Lexer):
     ANYKEY = r'(?i)\banykey\b'
     PROC = r'(?i)\bproc\b'
     FORGET_PROC = r'(?i)\bforget_proc\b'
+    INV = r'(?i)\binv[+-]'
+    INVKILL = r'(?i)\binvkill\b'
     LINK_SEP = r'\|'
     NUMBER = r'\b[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\b'
     ID = r'\b[a-zA-Z][a-zA-Z0-9_]*\b'
@@ -152,6 +160,8 @@ class Pax(Parser):
     @_('any_key_statement')
     @_('procedure_statement')
     @_('forget_procedure_statement')
+    @_('inventory_statement')
+    @_('clear_inventory_statement')
     def statement(self, p):
         return p[0]
 
@@ -187,6 +197,22 @@ class Pax(Parser):
     @_('FORGET_PROC')
     def forget_procedure_statement(self, p):
         return ('drop-call-stack', )
+
+    @_('INV ID')
+    def inventory_statement(self, p):
+        return ('inventory', p.INV[3], 1, p.ID)
+
+    @_('INV number_expression "," ID')
+    def inventory_statement(self, p):
+        return ('inventory', p.INV[3], p.number_expression, p.ID)
+
+    @_('INVKILL ID')
+    def clear_inventory_statement(self, p):
+        return ('inventory', '=', 0, p.ID)
+
+    @_('INVKILL')
+    def clear_inventory_statement(self, p):
+        return ('inventory', '=', 0, None)
 
     @_('BUTTON')
     def button_statement(self, p):
@@ -460,6 +486,9 @@ input a
 anykey & anykey b
 proc blabla
 forget_proc
+inv+ 1 + 2, das
+invkill a
+invkill
 """
 
 def tokens():

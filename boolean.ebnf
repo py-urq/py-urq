@@ -10,6 +10,8 @@ statement = assignment statement
           | any key statement
           | procedure statement
           | forget procedure statement
+          | inventory statement
+          | clear inventory statement
           ;
 
 goto statement = "goto" , variable
@@ -37,6 +39,13 @@ input statement = "input", variable ;
 any key statement = "anykey"
                   | "anykey" , variable
                   ;
+
+inventory statement = "inv", ("+" | "-"), inventory item
+                    | "inv", ("+" | "-"), number expression, ",", inventory item
+                    ;
+clear inventory statement = "invkill" [ inventory item ];
+
+inventory item = text ; (?)
 
 procedure statement = "proc", location name;
 forget procedure statement = "forget_proc";
