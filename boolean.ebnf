@@ -8,6 +8,8 @@ statement = assignment statement
           | end statement
           | input statement
           | any key statement
+          | procedure statement
+          | forget procedure statement
           ;
 
 goto statement = "goto" , variable
@@ -35,6 +37,9 @@ input statement = "input", variable ;
 any key statement = "anykey"
                   | "anykey" , variable
                   ;
+
+procedure statement = "proc", location name;
+forget procedure statement = "forget_proc";
 
 assignment statement = variable , "=" , (boolean expression | number expression | string term) ;
 conditional statement = "if" , boolean expression , "then" , statement group [ "else" , statement group ] ;

@@ -42,6 +42,8 @@ class Lex(Lexer):
         END,
         INPUT,
         ANYKEY,
+        PROC,
+        FORGET_PROC,
         LINK_SEP,
         NUMBER,
         ID,
@@ -80,13 +82,15 @@ class Lex(Lexer):
     IF = r'(?i)\bif\b'
     THEN = r'(?i)\bthen\b'
     ELSE = r'(?i)\belse\b'
-    PRINT = r'(?i)(\bprint|\bp)([^&\n]*?\[\[.*?\]\][^&\n]*?)*[^&\n]+'
+    PRINT = r'(?i)(\bprint\b|\bp\b)([^&\n]*?\[\[.*?\]\][^&\n]*?)*[^&\n]+'
     PRINTLN = r'(?i)(\bprintln\b|\bpln\b)([^&\n]*?\[\[.*?\]\][^&\n]*?)*[^&\n]+'
     BUTTON = r'(?i)\bbtn\b[^\n]+'
     GOTO = r'(?i)\bgoto\b'
     END = r'(?i)\bend\b'
     INPUT = r'(?i)\binput\b'
     ANYKEY = r'(?i)\banykey\b'
+    PROC = r'(?i)\bproc\b'
+    FORGET_PROC = r'(?i)\bforget_proc\b'
     LINK_SEP = r'\|'
     NUMBER = r'\b[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\b'
     ID = r'\b[a-zA-Z][a-zA-Z0-9_]*\b'
@@ -146,6 +150,8 @@ class Pax(Parser):
     @_('end_statement')
     @_('input_statement')
     @_('any_key_statement')
+    @_('procedure_statement')
+    @_('forget_procedure_statement')
     def statement(self, p):
         return p[0]
 
@@ -173,6 +179,14 @@ class Pax(Parser):
     @_('ANYKEY ID')
     def any_key_statement(self, p):
         return ('anykey', p.ID)
+
+    @_('PROC ID')
+    def procedure_statement(self, p):
+        return ('call', p.ID)
+
+    @_('FORGET_PROC')
+    def forget_procedure_statement(self, p):
+        return ('drop-call-stack', )
 
     @_('BUTTON')
     def button_statement(self, p):
@@ -444,6 +458,8 @@ btn pln Hi Hi hi & goto a, and here is text
 end
 input a
 anykey & anykey b
+proc blabla
+forget_proc
 """
 
 def tokens():
