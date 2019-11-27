@@ -12,6 +12,8 @@ statement = assignment statement
           | forget procedure statement
           | inventory statement
           | clear inventory statement
+          | quit statement
+          | save statement
           ;
 
 goto statement = "goto" , variable
@@ -46,6 +48,9 @@ inventory statement = "inv", ("+" | "-"), inventory item
 clear inventory statement = "invkill" [ inventory item ];
 
 inventory item = text ; (?)
+
+quit statement = "quit" ;
+save statement = "save" ;
 
 procedure statement = "proc", location name;
 forget procedure statement = "forget_proc";

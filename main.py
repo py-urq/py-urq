@@ -46,6 +46,8 @@ class Lex(Lexer):
         FORGET_PROC,
         INV,
         INVKILL,
+        QUIT,
+        SAVE,
         LINK_SEP,
         NUMBER,
         ID,
@@ -99,6 +101,8 @@ class Lex(Lexer):
     FORGET_PROC = r'(?i)\bforget_proc\b'
     INV = r'(?i)\binv[+-]'
     INVKILL = r'(?i)\binvkill\b'
+    QUIT = r'(?i)\bquit\b'
+    SAVE = r'(?i)\bsave\b'
     LINK_SEP = r'\|'
     NUMBER = r'\b[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\b'
     ID = r'\b[a-zA-Z][a-zA-Z0-9_]*\b'
@@ -162,6 +166,8 @@ class Pax(Parser):
     @_('forget_procedure_statement')
     @_('inventory_statement')
     @_('clear_inventory_statement')
+    @_('quit_statement')
+    @_('save_statement')
     def statement(self, p):
         return p[0]
 
@@ -217,6 +223,14 @@ class Pax(Parser):
     @_('BUTTON')
     def button_statement(self, p):
         return self._parse_button(p.BUTTON[3:])
+
+    @_('QUIT')
+    def quit_statement(self, p):
+        return ('quit', )
+
+    @_('SAVE')
+    def save_statement(self, p):
+        return ('save', )
 
     @_('ID EQ boolean_expression')
     @_('ID EQ number_expression')
@@ -489,6 +503,7 @@ forget_proc
 inv+ 1 + 2, das
 invkill a
 invkill
+save & quit
 """
 
 def tokens():
