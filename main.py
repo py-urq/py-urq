@@ -49,6 +49,7 @@ class Lex(Lexer):
         INVKILL,
         QUIT,
         SAVE,
+        CLS,
         RANDOM,
         RANDOM_INT,
         TIME,
@@ -82,6 +83,18 @@ class Lex(Lexer):
     def ignore_old_comment(self, t):
         self.lineno += 1
 
+    @_(r'//.*?\n')
+    def ignore_c_comment(self, t):
+        self.lineno += 1
+
+    @_(r'--.*?\n')
+    def ignore_minmin_comment(self, t):
+        self.lineno += 1
+
+    @_(r'(?i)instr .*?\n')
+    def ignore_instr(self, t):
+        self.lineno += 1
+
     literals = {
         ',',
     }
@@ -113,19 +126,20 @@ class Lex(Lexer):
     IF = r'(?i)\bif\b'
     THEN = r'(?i)\bthen\b'
     ELSE = r'(?i)\belse\b'
-    PRINT = r'(?i)(\bprint\b|\bp\b)([^&\n]*?\[\[.*?\]\][^&\n]*?)*[^&\n]+'
-    PRINTLN = r'(?i)(\bprintln\b|\bpln\b)([^&\n]*?\[\[.*?\]\][^&\n]*?)*[^&\n]+'
-    BUTTON = r'(?i)\bbtn\b[^\n]+'
+    PRINT = r'(?i)(\bprint\b|\bp\b)([^&\n]*?\[\[.*?\]\][^&\n]*?)*[^&\n]*'
+    PRINTLN = r'(?i)(\bprintln\b|\bpln\b)([^&\n]*?\[\[.*?\]\][^&\n]*?)*[^&\n]*'
+    BUTTON = r'(?i)\bbtn\b[^&\n]+'
     GOTO = r'(?i)\bgoto\b' + r'[^&\n]+'
     END = r'(?i)\bend\b'
     INPUT = r'(?i)\binput\b'
     ANYKEY = r'(?i)\banykey\b'
     PROC = r'(?i)\bproc\b' + r'[^&\n]+'
-    FORGET_PROC = r'(?i)\bforget_proc\b'
+    FORGET_PROC = r'(?i)\bforget_procs?\b'
     INV = r'(?i)\binv[+-]'
     INVKILL = r'(?i)\binvkill\b'
     QUIT = r'(?i)\bquit\b'
-    SAVE = r'(?i)\bsave\b'
+    SAVE = r'(?i)\bsave\b [\w#%$]*'
+    CLS = r'(?i)\bcls\b'
     RANDOM = r'(?i)\brnd\b'
     RANDOM_INT = r'(?i)\brnd\d+\b'
     TIME = r'(?i)\btime\b'
@@ -135,7 +149,7 @@ class Lex(Lexer):
     IMAGE = r'(?i)\bimage\b'
     LINK_SEP = r'\|'
     NUMBER = r'\b[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\b'
-    ID = r'\b\w+\b'
+    ID = r'(\b[\w.]+\b)|(#[\w.]+?\$)'
     #LOCATION = r'\b[a-zA-Z][a-zA-Z0-9_-]+\b'
     LABEL = r':[^&\n,]+'
     STRING = r'"[^"]*"'
@@ -147,6 +161,8 @@ class Pax(Parser):
     tokens = Lex.tokens
 
     precedence = (
+        ('left', IF),
+        ('nonassoc', EQ),
         ('left', PLUS, MINUS),
         ('left', TIMES, DIVIDE, INTDIVIDE, MOD),
         ('left', OR, XOR),
@@ -200,6 +216,7 @@ class Pax(Parser):
     @_('clear_inventory_statement')
     @_('quit_statement')
     @_('save_statement')
+    @_('clear_screen_statement')
     @_('pause_statement')
     @_('multimedia_statement')
     def statement(self, p):
@@ -273,6 +290,10 @@ class Pax(Parser):
     def save_statement(self, p):
         return ('save', )
 
+    @_('CLS')
+    def clear_screen_statement(self, p):
+        return ('clear-screen',)
+
     @_('PAUSE number_expression')
     def pause_statement(self, p):
         return ('pause', p.number_expression)
@@ -283,11 +304,15 @@ class Pax(Parser):
     def multimedia_statement(self, p):
         return (p[0], p.string_term)
 
-    @_('ID EQ boolean_expression')
-    @_('ID EQ number_expression')
-    @_('ID EQ string_term')
+    @_('ID EQ expression')
     def assignment_statement(self, p):
         return ('assign', p.ID, p[2])
+
+    @_('boolean_expression')
+    @_('number_expression')
+    @_('string_term')
+    def expression(self, p):
+        return p[0]
 
     @_('IF boolean_expression THEN statement_group')
     def conditional_statement(self, p):
@@ -334,17 +359,9 @@ class Pax(Parser):
     def boolean_term(self, p):
         return p.boolean_constant
 
-    @_('number_compare_expression')
+    @_('compare_expression')
     def boolean_term(self, p):
-        return p.number_compare_expression
-
-    @_('boolean_compare_expression')
-    def boolean_term(self, p):
-        return p.boolean_compare_expression
-
-    @_('string_compare_expression')
-    def boolean_term(self, p):
-        return p.string_compare_expression
+        return p.compare_expression
 
     @_('ID')
     def boolean_term(self, p):
@@ -355,18 +372,9 @@ class Pax(Parser):
     def boolean_constant(self, p):
         return ('constant', p[0])
 
-    @_('boolean_term boolean_compare_operator boolean_term')
-    def boolean_compare_expression(self, p):
-        return (p.boolean_compare_operator, [p.boolean_term0, p.boolean_term1])
-
-    @_('NE')
-    @_('EQ')
-    def boolean_compare_operator(self, p):
-        return p[0]
-
-    @_('number_expression number_compare_operator number_expression')
-    def number_compare_expression(self, p):
-        return (p.number_compare_operator, [p.number_expression0, p.number_expression1])
+    @_('expression compare_operator expression')
+    def compare_expression(self, p):
+        return (p.compare_operator, [p.expression0, p.expression1])
 
     @_('NE')
     @_('LE')
@@ -374,7 +382,8 @@ class Pax(Parser):
     @_('LT')
     @_('GT')
     @_('EQ')
-    def number_compare_operator(self, p):
+    @_('MASK_EQ')
+    def compare_operator(self, p):
         return p[0]
 
     @_('number_add_expression')
@@ -438,16 +447,6 @@ class Pax(Parser):
     @_('DIVIDE')
     @_('MOD')
     def number_multiply_operator(self, p):
-        return p[0]
-
-    @_('string_term string_compare_operator string_term')
-    def string_compare_expression(self, p):
-        return (p.string_compare_operator, [p.string_term0, p.string_term1])
-
-    @_('NE')
-    @_('EQ')
-    @_('MASK_EQ')
-    def string_compare_operator(self, p):
         return p[0]
 
     @_('STRING')
@@ -551,7 +550,7 @@ class Pax(Parser):
         else:
             text = split[1].strip(' ')
             operators = split[0].strip(' ')
-            if re.match(r'^[a-zA-Z-0-9_]+$', operators):
+            if re.match(r'^[\w.]+$', operators):
                 return ('button', text, [('goto', operators)])
             else:
                 return ('button', text, self._parse_operators(operators))
@@ -559,33 +558,18 @@ class Pax(Parser):
 
 
 
-TEXT = """
-/*
-pln some text  #var_name$ and a special char ##38$ and a [[b]] and [[ link | if a = z then goto a else a = z & goto b ]] of cause... & pln abc
-*/
-btn pln Hi Hi hi & goto a, and here is text
-end
-input a
-anykey & anykey b
-proc blabla
-forget_proc
-inv+ 1 + 2, das
-invkill a
-invkill
-save & quit
-a = time * rnd23
-pause a + 23
-play "aaa"
-music "bbb"
-image "ddd"
-"""
+# quest_file = "/home/su0/git/kirillsulim/sly-test/quests/Cursed City/cursed_city.qst"
+# quest_file = "/home/su0/git/kirillsulim/sly-test/quests/Alice's Adventures in Urqland/quest.qst"
+# quest_file = "/home/su0/git/kirillsulim/sly-test/quests/Grunk and cheese/quest.qst"
+# quest_file = "/home/su0/git/kirillsulim/sly-test/quests/support/quest.qst"
+# quest_file = "/home/su0/git/kirillsulim/sly-test/quests/zolushka/quest.qst"
+quest_file = "/home/su0/git/kirillsulim/sly-test/quests/Адская суббота/quest.qst"
 
-quest_file = Path(
-    "/home/su0/git/kirillsulim/sly-test/quests/Alice's Adventures in Urqland/quest.qst"
-).read_text('utf-8')
+quest_source = Path(quest_file).read_text('utf-8')
+# quest_source = 'Mhealp2=(Mhealp1*#Weaponhealb$)/100'
 
 def tokens():
-    for t in Lex().tokenize(quest_file):
+    for t in Lex().tokenize(quest_source):
         print(t)
         yield t
 
