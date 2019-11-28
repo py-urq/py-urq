@@ -1,0 +1,116 @@
+program = { statement group }
+
+statement group = statement , { "&" , statement } ;
+statement = assignment statement
+          | conditional statement
+          | print statement
+          | goto statement
+          | end statement
+          | input statement
+          | any key statement
+          | procedure statement
+          | forget procedure statement
+          | inventory statement
+          | clear inventory statement
+          | quit statement
+          | save statement
+          | pause statement
+          | multimedia statement
+          ;
+
+label statement = ":", location name;
+location name = letter, {letter | digit | symbol - "&" - "\n" - "," }
+
+goto statement = "goto" , location name
+
+end statement = "end" ;
+
+print statement = ( print | p | println | pln ) , text block
+
+text block = {( text | link )}
+
+link = "[[" , location name , "]]"
+     | "[[" , text , "|" , location name , "]]"
+     | "[[" , text , "|" , statement group , "]]" ;
+
+text = { letter | digit | symbol (?) - "&" - "\n" }
+
+location name = { letter | digit | symbol }
+
+button statement = "btn" , location name
+                 | "btn" , location name , "," , text
+                 | "btn" , statement group , "," , text
+                 ;
+
+input statement = "input", variable ;
+any key statement = "anykey"
+                  | "anykey" , variable
+                  ;
+
+inventory statement = "inv", ("+" | "-"), inventory item
+                    | "inv", ("+" | "-"), number expression, ",", inventory item
+                    ;
+clear inventory statement = "invkill" [ inventory item ];
+
+inventory item = text ; (?)
+
+quit statement = "quit" ;
+save statement = "save" ;
+
+procedure statement = "proc", location name;
+forget procedure statement = "forget_proc";
+
+pause statement = "pause" , number expression;
+multimedia statement = play file
+                     | music file
+                     | image file
+                     ;
+
+play statement = "play", file;
+music statement = "music", file;
+image statement = "image", file;
+
+file = string term;
+
+assignment statement = variable , "=" , (boolean expression | number expression | string term) ;
+conditional statement = "if" , boolean expression , "then" , statement group [ "else" , statement group ] ;
+
+boolean expression = boolean or expression;
+boolean or expression = boolean and expression , [{ boolean or operator , boolean and expression }] ;
+boolean or operator = "||" | "^^" | "or" | "xor" ;
+boolean and expression = boolean term , [{ boolean and operator, boolean term }]
+boolean and operator = "&&" | "and" ;
+boolean term = variable | boolean constant | not , boolean term | "(" , boolean expression , ")"
+              | number compare expression | boolean compare expression | string compare expression;
+variable = letter , { letter | digit | "_" } ;
+boolean constant = "true" | "false" ;
+not = "not" ;
+
+boolean compare expression = boolean term , boolean compare operator , boolean term;
+boolean compare operator = "=" | "!=" | "<>";
+
+number compare expression = number expression , number compare operator , number expression ;
+number compare operator = "<" | ">" | "<=" | ">=" | "!=" | "<>" | "=" ;
+
+number expression = number add expression
+number add expression = number multiply expression [{ number add operator, number multiply expression}] ;
+number add operator = "+" | "-";
+number multiply expression = number term , [{ number multiply operator , number term }];
+number multiply operator = "*" | "/" | "//" | "%" ;
+number term = variable | number constant | minus , number term | plus , number term
+             | "(" , number expression , ")" | number function ;
+number constant = (digit , { digit } | [{digit}], "." , [{digit}] , [ ("e" | "E") , [plus | minus] , digit, { digit } ])
+                | ( plus | minus ) , number constant ;
+number function = "rnd", { digit }
+                | time
+                ;
+minus = "-" ;
+plus = "+" ;
+
+string compare expression = string term , string compare operator , string term ;
+string compare operator = "=" | "==" | "!=" | "<>" ;
+
+string term = variable | string constant ;
+string constant = "\"" , { letter | digit | symbol (?) } , "\"" ;
+
+empty = "" ;
